@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 응용과 이해-2장</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans-serif;background:#f5f5f3;min-height:100vh;padding:2rem 1rem;display:flex;justify-content:center}
+.wrap{max-width:700px;width:100%}
+.header{background:#fff;border-radius:16px;border:1px solid #e0ddd5;padding:1.5rem 2rem;margin-bottom:1rem}
+h1{font-size:20px;font-weight:700;color:#1a1a18;margin-bottom:4px}
+.subtitle{font-size:13px;color:#888780}
+.progress-wrap{background:#fff;border-radius:16px;border:1px solid #e0ddd5;padding:1rem 2rem;margin-bottom:1rem;display:flex;align-items:center;gap:16px}
+.prog-bar-bg{flex:1;background:#f1efe8;border-radius:99px;height:8px}
+.prog-bar-fill{height:8px;border-radius:99px;background:#1D9E75;transition:width .4s}
+.prog-text{font-size:13px;color:#888780;white-space:nowrap;min-width:60px;text-align:right}
+.score-badge{font-size:13px;font-weight:600;color:#185FA5;background:#E6F1FB;padding:4px 12px;border-radius:99px;white-space:nowrap}
+.card{background:#fff;border-radius:16px;border:1px solid #e0ddd5;padding:2rem;margin-bottom:1rem}
+.type-tag{display:inline-block;font-size:11px;font-weight:600;padding:3px 10px;border-radius:99px;margin-bottom:10px;letter-spacing:.5px}
+.type-mc{background:#E6F1FB;color:#185FA5}
+.type-ox{background:#EAF3DE;color:#3B6D11}
+.type-order{background:#FAEEDA;color:#633806}
+.type-blank{background:#FBEAF0;color:#72243E}
+.type-match{background:#EEEDFE;color:#3C3489}
+.cat-badge{display:inline-block;font-size:12px;padding:2px 10px;border-radius:99px;background:#f1efe8;color:#5F5E5A;margin-left:8px;margin-bottom:10px}
+.q-text{font-size:16px;font-weight:600;color:#1a1a18;line-height:1.65;margin-bottom:1.25rem}
+/* MC */
+.opts{display:flex;flex-direction:column;gap:9px}
+.opt-btn{display:flex;align-items:flex-start;gap:10px;padding:11px 15px;border:1px solid #d3d1c7;border-radius:10px;background:#fff;cursor:pointer;font-size:14px;color:#1a1a18;text-align:left;line-height:1.5;transition:background .12s,border-color .12s;font-family:inherit;width:100%}
+.opt-btn:hover:not(:disabled){background:#f5f5f3;border-color:#b4b2a9}
+.opt-label{font-weight:700;min-width:20px;color:#888780;flex-shrink:0}
+.opt-btn.correct{background:#EAF3DE;border-color:#639922}
+.opt-btn.correct .opt-label{color:#3B6D11}
+.opt-btn.wrong{background:#FCEBEB;border-color:#E24B4A}
+.opt-btn.wrong .opt-label{color:#A32D2D}
+.opt-btn:disabled{cursor:default}
+/* OX */
+.ox-wrap{display:flex;gap:16px}
+.ox-btn{flex:1;padding:20px;border:1px solid #d3d1c7;border-radius:12px;background:#fff;cursor:pointer;font-size:32px;text-align:center;transition:background .12s,border-color .12s;font-family:inherit}
+.ox-btn:hover:not(:disabled){background:#f5f5f3}
+.ox-btn.correct{background:#EAF3DE;border-color:#639922}
+.ox-btn.wrong{background:#FCEBEB;border-color:#E24B4A}
+.ox-btn:disabled{cursor:default}
+/* ORDER */
+.order-inst{font-size:13px;color:#888780;margin-bottom:12px}
+.order-pool{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;min-height:40px;padding:8px;border:1px dashed #d3d1c7;border-radius:10px}
+.order-slots{display:flex;flex-direction:column;gap:6px}
+.order-slot{display:flex;align-items:center;gap:8px;padding:9px 14px;border:1px dashed #d3d1c7;border-radius:9px;min-height:42px;background:#fafaf8;font-size:14px;color:#888780}
+.order-slot.filled{border-style:solid;border-color:#b4b2a9;background:#fff;color:#1a1a18}
+.order-slot .slot-num{font-weight:700;font-size:12px;color:#b4b2a9;min-width:20px}
+.order-chip{padding:8px 14px;border:1px solid #d3d1c7;border-radius:8px;background:#fff;cursor:pointer;font-size:13px;color:#1a1a18;transition:background .1s,border-color .1s}
+.order-chip:hover{background:#f1efe8;border-color:#b4b2a9}
+.order-chip.used{opacity:.35;cursor:default;pointer-events:none}
+.order-slot .remove-chip{font-size:11px;margin-left:auto;color:#b4b2a9;cursor:pointer;padding:2px 6px;border-radius:4px}
+.order-slot .remove-chip:hover{background:#f1efe8;color:#5F5E5A}
+.order-check-btn{margin-top:12px;padding:9px 22px;border:1px solid #d3d1c7;border-radius:9px;background:#fff;color:#1a1a18;font-size:14px;cursor:pointer;font-family:inherit}
+.order-check-btn:hover{background:#f5f5f3}
+.order-slot.slot-correct{border-color:#639922;background:#EAF3DE}
+.order-slot.slot-wrong{border-color:#E24B4A;background:#FCEBEB}
+/* BLANK */
+.blank-text{font-size:16px;font-weight:600;color:#1a1a18;line-height:2;margin-bottom:1rem}
+.blank-input{border:none;border-bottom:2px solid #1D9E75;background:transparent;font-size:16px;font-weight:700;color:#185FA5;width:120px;text-align:center;outline:none;padding:0 4px;font-family:inherit}
+.blank-opts{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.blank-chip{padding:8px 16px;border:1px solid #d3d1c7;border-radius:8px;background:#fff;cursor:pointer;font-size:14px;color:#1a1a18;transition:background .1s}
+.blank-chip:hover:not(:disabled){background:#f1efe8;border-color:#b4b2a9}
+.blank-chip.correct{background:#EAF3DE;border-color:#639922;color:#3B6D11;font-weight:600}
+.blank-chip.wrong{background:#FCEBEB;border-color:#E24B4A;color:#A32D2D}
+.blank-chip:disabled{cursor:default}
+/* MATCH */
+.match-wrap{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.match-col-label{font-size:12px;font-weight:600;color:#888780;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}
+.match-left,.match-right{display:flex;flex-direction:column;gap:6px}
+.match-item{padding:10px 14px;border:1px solid #d3d1c7;border-radius:9px;font-size:13px;cursor:pointer;transition:background .1s,border-color .1s;line-height:1.4;min-height:44px;display:flex;align-items:center}
+.match-item:hover:not(.matched):not(.disabled){background:#f1efe8;border-color:#b4b2a9}
+.match-item.selected{border-color:#185FA5;background:#E6F1FB;color:#185FA5;font-weight:600}
+.match-item.matched-correct{border-color:#639922;background:#EAF3DE;color:#3B6D11}
+.match-item.matched-wrong{border-color:#E24B4A;background:#FCEBEB;color:#A32D2D}
+.match-item.disabled{cursor:default}
+.match-check-btn{margin-top:14px;padding:9px 22px;border:1px solid #d3d1c7;border-radius:9px;background:#fff;color:#1a1a18;font-size:14px;cursor:pointer;font-family:inherit}
+.match-check-btn:hover{background:#f5f5f3}
+/* FEEDBACK */
+.feedback{margin-top:1rem;padding:12px 16px;border-radius:10px;font-size:14px;line-height:1.65;display:none}
+.feedback.show{display:block}
+.feedback.correct{background:#EAF3DE;color:#27500A;border:1px solid #639922}
+.feedback.wrong{background:#FCEBEB;color:#791F1F;border:1px solid #E24B4A}
+.next-btn{margin-top:1.25rem;padding:10px 26px;border:1px solid #d3d1c7;border-radius:10px;background:#fff;color:#1a1a18;font-size:15px;cursor:pointer;display:none;font-family:inherit;transition:background .1s}
+.next-btn:hover{background:#f5f5f3}
+/* RESULT */
+.result-box{text-align:center;padding:2rem 1rem}
+.result-score{font-size:60px;font-weight:800;color:#1a1a18;margin-bottom:6px}
+.result-msg{font-size:16px;color:#888780;margin-bottom:2rem;line-height:1.6}
+.result-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:2rem}
+.result-stat{background:#f5f5f3;border-radius:12px;padding:16px 8px;text-align:center}
+.result-stat .val{font-size:28px;font-weight:700;margin-bottom:4px}
+.result-stat .lbl{font-size:12px;color:#888780}
+.result-breakdown{text-align:left;border:1px solid #e0ddd5;border-radius:12px;overflow:hidden;margin-bottom:2rem}
+.rb-row{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid #f1efe8;font-size:13px}
+.rb-row:last-child{border-bottom:none}
+.rb-type{font-weight:600;color:#1a1a18}
+.rb-score{color:#185FA5;font-weight:600}
+.restart-btn{padding:12px 36px;border:1px solid #d3d1c7;border-radius:10px;background:#fff;color:#1a1a18;font-size:16px;cursor:pointer;font-family:inherit}
+.restart-btn:hover{background:#f5f5f3}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <h1>🧨 AI 응용과 이해-2장</h1>
+    <!-- <p class="subtitle">인공지능과 미래-2 · 총 50문제 · 사지선다 / OX / 순서배열 / 빈칸완성 / 매칭</p> -->
+  </div>
+  <div class="progress-wrap">
+    <div class="prog-bar-bg"><div class="prog-bar-fill" id="prog-fill" style="width:0%"></div></div>
+    <span class="prog-text" id="prog-text">0 / 50</span>
+    <span class="score-badge" id="score-badge">점수 0</span>
+  </div>
+  <div id="quiz-area"></div>
+</div>
+
+<script>
+// ─── QUESTION BANK ───────────────────────────────────────────────────────────
+const ALL = [
+
+// ════ 사지선다 (MC) ════
+{type:'mc',cat:'현재 AI의 한계',
+q:'딥러닝 모델이 어떤 결정을 내렸는지 그 이유를 알기 어려운 문제를 무엇이라고 하는가?',
+opts:['좁은 인공지능 문제','블랙박스 문제','에너지 효율성 문제','할루시네이션 문제'],ans:1,
+exp:'딥러닝 모델은 수백만 개 이상의 파라미터를 학습하며 복잡한 연산으로 결론에 도달하지만, 그 과정이 불투명하여 설명하기 어렵습니다. 이를 "블랙박스 문제(black box problem)"라고 합니다.'},
+
+{type:'mc',cat:'현재 AI의 한계',
+q:'현재 AI가 수학적 계산에서 오류를 범하는 주된 이유는 무엇인가?',
+opts:['데이터가 부족하기 때문','텍스트 패턴에 의존해 답변을 생성하기 때문','컴퓨팅 파워가 부족하기 때문','알고리즘이 너무 단순하기 때문'],ans:1,
+exp:'AI는 수학적 논리를 완벽히 학습하기보다 텍스트 패턴에 의존해 답변을 생성합니다. 따라서 정확한 계산 결과를 보장하지 않습니다.'},
+
+{type:'mc',cat:'좁은 인공지능',
+q:'2016년 인간 바둑 챔피언을 이겨 화제가 되었지만, 바둑 외 다른 문제는 전혀 해결하지 못하는 좁은 AI의 대표 사례는?',
+opts:['ChatGPT','알파폴드','알파고','자율주행차'],ans:2,
+exp:'알파고는 바둑이라는 단일 도메인에 특화된 좁은 AI입니다. 체스·장기 같은 다른 게임이나 일상 대화·이미지 인식은 수행하지 못합니다.'},
+
+{type:'mc',cat:'현재 AI의 한계',
+q:'딥러닝 모델 훈련에 막대한 컴퓨팅 자원과 전력이 필요한 것은 어떤 한계에 해당하는가?',
+opts:['블랙박스 문제','복잡한 논리 추론의 한계','에너지 효율성 문제','인간과의 상호작용 한계'],ans:2,
+exp:'딥러닝 모델 훈련에는 GPU·TPU 같은 고성능 장비가 필요하며, 수십억 개의 파라미터를 최적화하는 과정이 수일에서 수달까지 이어지며 막대한 전력을 소모합니다.'},
+
+{type:'mc',cat:'AGI',
+q:'AGI(범용 인공지능)의 정의로 가장 적절한 것은?',
+opts:['특정 도메인에서만 전문성을 발휘하는 AI','특정 작업에 한정되지 않고 인간과 유사한 수준의 지능을 발휘할 수 있는 AI','인간의 감정을 완벽하게 모방하는 AI','스스로 하드웨어를 설계하는 AI'],ans:1,
+exp:'AGI(Artificial General Intelligence)는 특정 작업에 한정되지 않고 인간과 유사한 수준의 지능을 다양한 상황에서 발휘할 수 있는 인공지능입니다.'},
+
+{type:'mc',cat:'AGI 특징',
+q:'다음 중 AGI의 주요 특징이 아닌 것은?',
+opts:['다재다능성','스스로 학습','단일 도메인 전문성','의식과 자기 인식'],ans:2,
+exp:'단일 도메인 전문성은 좁은 AI(Narrow AI)의 특징입니다. AGI의 주요 특징은 다재다능성, 스스로 학습, 복잡한 추론, 감정 및 상호작용, 의식과 자기 인식입니다.'},
+
+{type:'mc',cat:'AI 5단계',
+q:"OpenAI의 AGI 로드맵에서 레벨 1에 해당하는 단계의 이름은?",
+opts:['추론 AI','자율 AI','대화형 AI','혁신가 AI'],ans:2,
+exp:'레벨 1은 "대화형 AI"로 자연스러운 대화 언어 능력을 가진 AI 단계입니다. GPT-3.5, GPT-4 같은 현재 챗봇이 여기에 해당합니다.'},
+
+{type:'mc',cat:'AI 5단계',
+q:'OpenAI AGI 로드맵 레벨 2 "추론 AI"의 특징으로 가장 옳은 것은?',
+opts:['인간 지시 없이 독립 행동','광범위한 주제에서 인간 수준의 문제 해결','새로운 아이디어를 독립적으로 발명','조직 전체를 자율 관리'],ans:1,
+exp:'레벨 2 추론 AI는 광범위한 주제에 대해 인간 수준의 문제 해결 능력을 갖춘 단계입니다. AlphaFold와 GPT-4가 추론 AI의 예로 언급됩니다.'},
+
+{type:'mc',cat:'AI 에이전트',
+q:'AI 에이전트는 OpenAI AGI 발전 5단계 중 몇 번째 단계에 해당하는가?',
+opts:['1단계 (대화형 AI)','2단계 (추론 AI)','3단계 (자율 AI)','4단계 (혁신가 AI)'],ans:2,
+exp:'AI 에이전트는 3단계 자율 AI에 해당합니다. 사용자가 목표를 설정하면 AI가 최적의 행동을 독립적으로 선택하고 실행합니다.'},
+
+{type:'mc',cat:'AI 에이전트',
+q:'AI 에이전트가 기존 챗봇·RPA와 구별되는 핵심 차이점은?',
+opts:['더 빠른 응답 속도','자율적으로 작업을 계획하고 실행하는 능력','더 많은 데이터 저장 능력','저렴한 운영 비용'],ans:1,
+exp:'AI 에이전트는 단순 명령 실행에 그치지 않고, 목표 설정 후 정보 수집·계획 수립·작업 수행을 자율적으로 수행한다는 점에서 차별화됩니다.'},
+
+{type:'mc',cat:'AGI 연구',
+q:"다음 회사와 프로젝트의 연결이 올바른 것은?",
+opts:['구글 – 컴퓨터 유스(Computer Use)','앤트로픽 – 프로젝트 아스트라','마이크로소프트 – 스타게이트 및 자율 AI 에이전트','OpenAI – 프로젝트 아스트라'],ans:2,
+exp:'스타게이트 및 자율 AI 에이전트는 마이크로소프트의 프로젝트입니다. 컴퓨터 유스(Computer Use)는 앤스로픽, 프로젝트 아스트라는 구글, 프로젝트 오리온은 OpenAI의 프로젝트입니다.'},
+
+{type:'mc',cat:'AI 에이전트',
+q:'AI 에이전트 워크플로우의 올바른 순서는?',
+opts:['정보 수집 → 목표 설정 → 작업 수행','목표 설정 → 정보 수집 → 작업 수행','작업 수행 → 목표 설정 → 정보 수집','목표 설정 → 작업 수행 → 정보 수집'],ans:1,
+exp:'AI 에이전트는 ① 사용자로부터 목표 설정 → ② 관련 정보 수집 → ③ 계획된 작업 수행의 순서로 작동합니다.'},
+
+{type:'mc',cat:'AGI 어려움',
+q:'AGI 개발의 어려움으로 강의에서 언급되지 않은 것은?',
+opts:['인간 뇌의 복잡성','윤리적·철학적 문제','방대한 컴퓨팅 자원 필요','인터넷 속도의 한계'],ans:3,
+exp:'강의에서 AGI 개발의 어려움으로 현재 기술 한계, 윤리적·철학적 문제, 인간 뇌의 복잡성, 현재 AI 모델 한계, 방대한 컴퓨팅 자원·에너지 문제를 언급했습니다. 인터넷 속도는 언급되지 않았습니다.'},
+
+{type:'mc',cat:'AI 에이전트 장점',
+q:'AI 에이전트가 머신러닝을 통해 대규모 실시간 데이터를 수집·분석하여 비즈니스 리더가 정확하고 신속한 결정을 내릴 수 있도록 돕는 장점은?',
+opts:['생산성 향상','비용 절감','정보 기반 의사 결정','고객 경험 개선'],ans:2,
+exp:'AI 에이전트는 ML을 통해 대규모 실시간 데이터를 수집·분석하여 비즈니스 리더가 더 정확하고 신속한 의사 결정을 내릴 수 있도록 돕습니다. 이를 "정보 기반 의사 결정"이라 합니다.'},
+
+{type:'mc',cat:'생성형 AI 미래',
+q:'게임 산업에서 생성형 AI가 게임 환경·캐릭터·스토리 라인을 자동으로 생성하여 플레이어마다 다른 경험을 제공하는 기법의 이름은?',
+opts:['딥러닝 생성','강화학습 생성','절차적 생성(Procedural Generation)','자연어 생성'],ans:2,
+exp:'절차적 생성(Procedural Generation)은 알고리즘을 통해 게임 콘텐츠를 자동 생성하는 기법입니다. 생성형 AI와 결합하여 플레이어마다 고유한 경험을 제공할 수 있습니다.'},
+
+{type:'mc',cat:'ChatGPT-4',
+q:'ChatGPT-4가 이전 버전보다 논리적 추론 능력이 향상된 주된 이유는?',
+opts:['더 많은 데이터로 훈련','셀프 어텐션 메커니즘 개선으로 긴 문맥 유지','더 빠른 GPU 사용','파라미터 수를 줄인 경량화'],ans:1,
+exp:'ChatGPT-4는 셀프 어텐션 메커니즘 개선으로 긴 문맥을 유지하고 여러 단계의 논리적 추론을 처리하는 능력이 향상되었습니다.'},
+
+{type:'mc',cat:'좁은 인공지능',
+q:'자율주행차가 좁은 AI로 분류되는 이유는?',
+opts:['제조 비용이 높아서','도로 운전에는 뛰어나지만 요리·음악 작곡 등 다른 도메인 문제는 해결 불가','학습 속도가 느려서','인터넷 연결이 필요해서'],ans:1,
+exp:'자율주행차는 도로 위 교통 상황 분석과 안전 운전에 특화된 좁은 AI입니다. 운전 이외의 문제(요리, 음악 작곡 등)는 해결할 수 없습니다.'},
+
+{type:'mc',cat:'AGI 가능성',
+q:'Ray Kurzweil 같은 미래학자들이 AGI 등장 시기로 예상한 연도는?',
+opts:['2030년경','2045년경','2060년경','2100년경'],ans:1,
+exp:'Ray Kurzweil 같은 미래학자들은 AGI가 2045년경에 등장할 것으로 예상합니다. 이는 인간 지능을 능가하는 기계 지능의 시대가 올 것이라는 특이점(Singularity) 이론에 기반합니다.'},
+
+{type:'mc',cat:'AI 에이전트 특성',
+q:'AI 에이전트의 주요 특성 중 "환경에서 얻은 정보를 바탕으로 학습하고 자신의 행동을 점점 개선하는 능력"은?',
+opts:['자율성','목표 지향성','학습 능력','상호작용'],ans:2,
+exp:'AI 에이전트의 학습 능력은 환경에서 얻은 정보를 바탕으로 학습하고 자신의 행동을 점점 개선하는 능력입니다. 이는 강화학습 등의 기법을 통해 구현됩니다.'},
+
+{type:'mc',cat:'AI 5단계',
+q:'OpenAI 5단계 중 "새로운 아이디어 발명을 돕고 인간 지식에 기여할 수 있는 AI"는?',
+opts:['대화형 AI','추론 AI','자율 AI','혁신가 AI'],ans:3,
+exp:'레벨 4 혁신가 AI(Innovator AI)는 독립적으로 획기적인 아이디어와 솔루션을 개발할 수 있는 단계로, 새로운 개념을 창출하고 복잡한 문제를 독창적으로 해결하는 능력을 갖춥니다.'},
+
+// ════ OX 퀴즈 ════
+{type:'ox',cat:'현재 AI의 한계',
+q:'현재 AI는 인간처럼 다양한 영역에서 지능적으로 행동할 수 있는 범용 인공지능(AGI)이다.',
+ans:false,
+exp:'현재 AI는 특정 도메인에 특화된 "좁은 인공지능(Narrow AI)"입니다. 인간처럼 다양한 문제를 해결할 수 있는 AGI는 아직 개발되지 않았습니다.'},
+
+{type:'ox',cat:'블랙박스',
+q:'블랙박스 문제란 AI가 결정을 내린 이유를 인간이 이해하기 어렵다는 문제를 말한다.',
+ans:true,
+exp:'딥러닝 모델은 수백만 개 이상의 파라미터를 학습하고 복잡한 연산을 통해 결론에 도달하지만, 그 과정이 매우 복잡하고 설명하기 어렵습니다. 이를 블랙박스 문제라고 합니다.'},
+
+{type:'ox',cat:'알파고',
+q:'알파고는 바둑뿐만 아니라 체스, 장기 등 다양한 보드게임에서도 인간 챔피언을 이길 수 있다.',
+ans:false,
+exp:'알파고는 바둑이라는 특정 도메인에 특화된 좁은 AI입니다. 체스, 장기 같은 다른 보드게임을 전혀 할 수 없고, 일상적인 대화나 이미지 인식도 수행하지 못합니다.'},
+
+{type:'ox',cat:'AGI',
+q:'AGI는 인간처럼 다양한 상황에서 스스로 학습하고 문제를 해결할 수 있는 능력을 목표로 한다.',
+ans:true,
+exp:'AGI는 특정 작업에 한정되지 않고 인간과 유사한 수준의 지능을 발휘할 수 있는 AI로, 다양한 상황에서 스스로 학습하고 문제를 해결하는 것이 목표입니다.'},
+
+{type:'ox',cat:'에너지',
+q:'생성형 AI 모델을 훈련할 때 수십억 개의 파라미터를 최적화해야 하며, 이 과정에서 GPU나 TPU 같은 병렬 처리 장비가 필요하다.',
+ans:true,
+exp:'생성형 AI 모델 훈련에는 수십억 개의 파라미터를 최적화해야 하며, GPU(그래픽 처리 장치)나 TPU(텐서 처리 장치) 같은 병렬 처리 장비가 필수적입니다. 훈련은 수일에서 수달까지 지속될 수 있습니다.'},
+
+{type:'ox',cat:'AI 에이전트',
+q:'AI 에이전트는 OpenAI AGI 5단계 중 2단계인 "추론 AI"에 해당한다.',
+ans:false,
+exp:'AI 에이전트는 5단계 중 3단계인 "자율 AI(Agents)"에 해당합니다. 2단계는 추론 AI로, 광범위한 주제에서 인간 수준의 문제 해결을 할 수 있는 단계입니다.'},
+
+{type:'ox',cat:'ChatGPT',
+q:'ChatGPT는 자연어 처리 도메인에서 우수한 성능을 발휘하지만, 로봇을 조작하여 물리적 작업을 직접 수행할 수 없다.',
+ans:true,
+exp:'ChatGPT는 자연어 처리 도메인에서 우수하지만, 수학적 추론, 감각 인식, 물리적 작업 수행 등에서 한계가 있습니다. 챗봇은 로봇을 조작하여 물리적 작업을 수행할 수 없습니다.'},
+
+{type:'ox',cat:'AI 미래',
+q:'생성형 AI는 의료 영상 분석, 질병 진단, 개인 맞춤형 치료 등 의료 분야에서 혁신을 일으킬 가능성이 있다.',
+ans:true,
+exp:'생성형 AI는 대량의 의료 데이터를 분석해 질병 패턴을 찾아내고, 의료 전문가가 놓칠 수 있는 세부 사항까지 포착할 수 있는 능력을 가지고 있어 의료 분야에서 큰 혁신이 기대됩니다.'},
+
+{type:'ox',cat:'AGI 어려움',
+q:'AGI가 개발된다면 인간처럼 도덕적 결정을 내리는 문제가 발생하기 때문에 윤리적 고민이 필요하다.',
+ans:true,
+exp:'AGI가 인간처럼 사고하고 판단할 수 있게 되면, 도덕적 결정을 어떻게 내릴 것인가 하는 문제가 발생합니다. 예를 들어 병원 환자 치료와 구호 활동 자원 배분 같은 상충되는 상황에서의 판단 문제 등이 있습니다.'},
+
+{type:'ox',cat:'AI 에이전트',
+q:'AI 에이전트는 인간의 지속적인 감독 아래에서만 작업을 수행할 수 있다.',
+ans:false,
+exp:'AI 에이전트(자율 AI)의 핵심 특징은 인간의 지속적인 감독 없이도 며칠 동안 복잡한 작업을 수행하고, 결정을 내리며, 변화하는 상황에 적응할 수 있다는 점입니다.'},
+
+// ════ 순서 맞추기 ════
+{type:'order',cat:'AI 5단계',
+q:"OpenAI가 제시한 'AGI로 가는 5단계'를 레벨 1부터 5까지 올바른 순서로 배열하세요.",
+items:['추론 AI','자율 AI','대화형 AI','혁신가 AI','조직적 AI'],
+correct:['대화형 AI','추론 AI','자율 AI','혁신가 AI','조직적 AI'],
+exp:'OpenAI AGI 5단계: 레벨1 대화형 AI → 레벨2 추론 AI → 레벨3 자율 AI → 레벨4 혁신가 AI → 레벨5 조직적 AI 순서입니다.'},
+
+{type:'order',cat:'AI 에이전트',
+q:'AI 에이전트의 워크플로우를 올바른 순서대로 배열하세요.',
+items:['LLM을 이용하여 이메일을 작성한다','사용자로부터 명령을 받는다','작성된 이메일을 송신한다','정보를 수집한다'],
+correct:['사용자로부터 명령을 받는다','정보를 수집한다','LLM을 이용하여 이메일을 작성한다','작성된 이메일을 송신한다'],
+exp:'AI 에이전트 워크플로우: ① 사용자로부터 명령 수신 → ② 정보 수집(DB 등) → ③ LLM으로 결과물 작성 → ④ 결과물 실행(송신) 순서입니다.'},
+
+{type:'order',cat:'현재 AI의 한계',
+q:'강의에서 다룬 현재 AI의 한계를 가장 먼저 언급된 것부터 순서대로 배열하세요.',
+items:['에너지 효율성 문제','설명 가능성 부족(블랙박스 문제)','복잡한 논리적 추론의 한계','수학적 계산의 한계'],
+correct:['복잡한 논리적 추론의 한계','수학적 계산의 한계','설명 가능성 부족(블랙박스 문제)','에너지 효율성 문제'],
+exp:'강의 슬라이드 순서: 복잡한 논리적 추론의 한계 → 수학적 계산의 한계 → 설명 가능성 부족(블랙박스 문제) → 에너지 효율성 문제 순으로 다루었습니다.'},
+
+{type:'order',cat:'AGI 특징',
+q:'AGI의 주요 특징을 강의에서 언급된 순서대로 배열하세요.',
+items:['의식과 자기 인식','스스로 학습','다재다능성','감정 및 상호작용','복잡한 추론'],
+correct:['다재다능성','스스로 학습','복잡한 추론','감정 및 상호작용','의식과 자기 인식'],
+exp:'AGI 주요 특징 순서: 다재다능성 → 스스로 학습 → 복잡한 추론 → 감정 및 상호작용 → 의식과 자기 인식 순으로 강의에서 설명되었습니다.'},
+
+{type:'order',cat:'AI 에이전트 장점',
+q:'강의에서 언급된 AI 에이전트의 장점을 제시된 순서대로 배열하세요.',
+items:['고객 경험 개선','비용 절감','생산성 향상','정보 기반 의사 결정'],
+correct:['생산성 향상','비용 절감','정보 기반 의사 결정','고객 경험 개선'],
+exp:'강의 순서: 생산성 향상 → 비용 절감 → 정보 기반 의사 결정 → 고객 경험 개선 순으로 설명되었습니다.'},
+
+// ════ 빈칸 완성 ════
+{type:'blank',cat:'블랙박스',
+q:'딥러닝 모델이 왜 특정 결정을 내렸는지 알기 어려운 이 문제를 [   ] 문제라고 한다.',
+blank:'블랙박스',
+opts:['블랙박스','화이트박스','딥러닝','알고리즘'],
+exp:'"블랙박스 문제(black box problem)"는 AI가 왜 특정 결정을 내렸는지 알기 어려운 경우를 말합니다. 아직도 인간은 신경망 안의 가중치들이 무엇을 의미하는지 정확하게 모릅니다.'},
+
+{type:'blank',cat:'AI 5단계',
+q:'OpenAI AGI 로드맵에서 "박사 학위 수준의 인간처럼 기본적인 문제 해결을 할 수 있는 시스템"은 레벨 [   ] 추론 AI이다.',
+blank:'2',
+opts:['1','2','3','4'],
+exp:'레벨 2 추론 AI는 박사 학위 수준의 인간처럼 광범위한 주제에 대해 기본적인 문제 해결을 할 수 있는 AI 시스템입니다.'},
+
+{type:'blank',cat:'AGI',
+q:'인간처럼 다양한 문제를 해결할 수 있는 [   ] 인공지능(AGI)은 아직 개발되지 않았으며, 언제 가능할지도 불확실하다.',
+blank:'범용',
+opts:['범용','좁은','강한','창의적'],
+exp:'범용 인공지능(AGI, Artificial General Intelligence)은 인간처럼 다양한 문제를 해결할 수 있는 AI입니다. 현재 AI는 특정 도메인에 특화된 "좁은 AI"에 머물고 있습니다.'},
+
+{type:'blank',cat:'AI 에이전트 특성',
+q:'AI 에이전트는 미리 정의된 목표, 학습된 선호도 및 상황적 맥락에 따라 작업을 실행하고 결정을 내리는 [   ] 특성을 가진다.',
+blank:'자율성',
+opts:['자율성','목표 지향성','학습 능력','상호작용'],
+exp:'자율성은 에이전트가 독립적으로 작동하며, 미리 정의된 목표·학습된 선호도·상황적 맥락에 따라 작업을 실행하고 결정을 내리는 특성입니다.'},
+
+{type:'blank',cat:'ChatGPT-4',
+q:'ChatGPT-4는 [   ] 메커니즘 개선으로 긴 문맥을 유지하고 여러 단계의 논리적 추론을 처리하는 능력이 향상되었다.',
+blank:'셀프 어텐션',
+opts:['셀프 어텐션','역전파','합성곱','드롭아웃'],
+exp:'ChatGPT-4는 셀프 어텐션(Self-Attention) 메커니즘 개선으로 긴 문맥을 유지하고 복잡한 퍼즐 같은 문제에서도 더 정확하고 논리적인 답변을 제공할 수 있게 되었습니다.'},
+
+{type:'blank',cat:'AI 5단계',
+q:'OpenAI 5단계 중 레벨 5는 "전체 조직의 일을 수행하고, 모든 기능을 자율적으로 통합하고 관리하는 AI"인 [   ] AI이다.',
+blank:'조직적',
+opts:['조직적','자율','혁신가','대화형'],
+exp:'레벨 5 조직적 AI(Organizational AI)는 AGI 로드맵의 최종 단계로, 전체 조직의 일을 수행하고 모든 기능을 자율적으로 통합·관리하는 AI입니다.'},
+
+{type:'blank',cat:'AGI 가능성',
+q:'Ray Kurzweil과 같은 미래학자들은 AGI가 2045년경에 등장할 것으로 예상하는데, 이는 인간 지능을 능가하는 기계 지능의 시대가 올 것이라는 [   ] 이론에 기반한다.',
+blank:'특이점(Singularity)',
+opts:['특이점(Singularity)','무어의 법칙','파레토 법칙','블랙스완 이론'],
+exp:'특이점(Singularity) 이론은 인간 지능을 능가하는 기계 지능의 시대가 올 것이라는 개념입니다. Ray Kurzweil은 이를 2045년경으로 예측했습니다.'},
+
+{type:'blank',cat:'좁은 인공지능',
+q:'현재의 AI는 특정한 도메인에서의 전문성을 발휘하는 "[   ] 인공지능(Narrow AI)"에 국한되어 있다.',
+blank:'좁은',
+opts:['좁은','넓은','범용','창의적'],
+exp:'현재의 AI는 "좁은 인공지능(Narrow AI)"으로, 특정 도메인에서만 전문성을 발휘하며 다른 분야로 확장되지 않습니다. 알파고, ChatGPT, 자율주행차 등이 모두 좁은 AI의 예입니다.'},
+
+{type:'blank',cat:'AI 에이전트',
+q:'AI 에이전트는 기존 챗봇이나 [   ] 솔루션과 달리, 자율적으로 작업을 계획하고 실행할 수 있다.',
+blank:'로봇 프로세스 자동화(RPA)',
+opts:['로봇 프로세스 자동화(RPA)','데이터베이스','클라우드 스토리지','블록체인'],
+exp:'AI 에이전트는 기존의 챗봇이나 로봇 프로세스 자동화(RPA) 솔루션과 달리, 단순히 명령에 따라 행동하는 것에 그치지 않고 자율적으로 작업을 계획하고 실행할 수 있다는 점에서 차별화됩니다.'},
+
+{type:'blank',cat:'AI 에이전트 장점',
+q:'AI 에이전트를 활용하면 반복적인 작업을 위임하여 직원들이 더 창의적이거나 중요한 업무에 집중할 수 있어 [   ]이 향상된다.',
+blank:'생산성',
+opts:['생산성','개인 정보 보호','하드웨어 성능','데이터 보안'],
+exp:'AI 에이전트의 첫 번째 장점은 생산성 향상입니다. 조직은 반복적인 작업을 AI 에이전트에게 위임함으로써 효율성을 극대화하고, 직원들은 더 창의적이거나 중요한 업무에 집중할 수 있습니다.'},
+
+// ════ 매칭 ════
+{type:'match',cat:'AGI 연구',
+q:'각 회사와 해당 AI 프로젝트를 올바르게 연결하세요.',
+lefts:['OpenAI','구글','앤스로픽','마이크로소프트'],
+rights:['프로젝트 오리온','프로젝트 아스트라','컴퓨터 유스(Computer Use)','스타게이트 및 자율 AI 에이전트'],
+correct:{'OpenAI':'프로젝트 오리온','구글':'프로젝트 아스트라','앤스로픽':'컴퓨터 유스(Computer Use)','마이크로소프트':'스타게이트 및 자율 AI 에이전트'},
+exp:'OpenAI-프로젝트 오리온, 구글-프로젝트 아스트라, 앤스로픽-컴퓨터 유스(Computer Use), 마이크로소프트-스타게이트 및 자율 AI 에이전트'},
+
+{type:'match',cat:'AI 5단계',
+q:'AI 발전 5단계의 레벨 번호와 이름을 올바르게 연결하세요.',
+lefts:['레벨 1','레벨 3','레벨 4','레벨 5'],
+rights:['조직적 AI','혁신가 AI','자율 AI','대화형 AI'],
+correct:{'레벨 1':'대화형 AI','레벨 3':'자율 AI','레벨 4':'혁신가 AI','레벨 5':'조직적 AI'},
+exp:'레벨1-대화형 AI, 레벨2-추론 AI, 레벨3-자율 AI, 레벨4-혁신가 AI, 레벨5-조직적 AI'},
+
+{type:'match',cat:'좁은 AI 예시',
+q:'각 AI 시스템과 해당하는 능력·특징을 올바르게 연결하세요.',
+lefts:['알파고','자율주행차','ChatGPT','AlphaFold'],
+rights:['단백질 구조 예측','자연어 처리 및 대화','도로 교통 상황 분석 및 운전','바둑 전략 분석'],
+correct:{'알파고':'바둑 전략 분석','자율주행차':'도로 교통 상황 분석 및 운전','ChatGPT':'자연어 처리 및 대화','AlphaFold':'단백질 구조 예측'},
+exp:'알파고-바둑 전략 분석, 자율주행차-도로 교통 상황 분석 및 운전, ChatGPT-자연어 처리 및 대화, AlphaFold-단백질 구조 예측'},
+
+{type:'match',cat:'AI 에이전트 특성',
+q:'AI 에이전트의 주요 특성 설명과 이름을 연결하세요.',
+lefts:['인간의 개입 없이 상황 분석 및 행동','환경 정보로 행동을 점점 개선','다른 에이전트·인간과 협력','특정 목적을 달성하기 위해 작업 수행'],
+rights:['목표 지향성','상호작용','자율성','학습 능력'],
+correct:{'인간의 개입 없이 상황 분석 및 행동':'자율성','환경 정보로 행동을 점점 개선':'학습 능력','다른 에이전트·인간과 협력':'상호작용','특정 목적을 달성하기 위해 작업 수행':'목표 지향성'},
+exp:'자율성-인간 개입 없이 상황 분석·행동, 학습 능력-환경 정보로 행동 개선, 상호작용-다른 에이전트·인간과 협력, 목표 지향성-특정 목적 달성을 위한 작업 수행'},
+
+{type:'match',cat:'생성형 AI 미래',
+q:'생성형 AI의 미래 응용 분야와 해당 설명을 연결하세요.',
+lefts:['예술과 창작','의료와 헬스케어','교육과 학습','비즈니스 자동화'],
+rights:['보고서 작성·고객 서비스·마케팅 콘텐츠 자동화','의료 영상 분석·질병 진단·맞춤형 치료','학습 수준 분석·맞춤형 콘텐츠 제공','AI와 아티스트 협력으로 새로운 스타일의 작업'],
+correct:{'예술과 창작':'AI와 아티스트 협력으로 새로운 스타일의 작업','의료와 헬스케어':'의료 영상 분석·질병 진단·맞춤형 치료','교육과 학습':'학습 수준 분석·맞춤형 콘텐츠 제공','비즈니스 자동화':'보고서 작성·고객 서비스·마케팅 콘텐츠 자동화'},
+exp:'예술-AI·아티스트 협력, 의료-영상 분석·진단·맞춤 치료, 교육-학습 수준 분석·맞춤 콘텐츠, 비즈니스-보고서·고객서비스·마케팅 자동화'}
+
+];
+
+// ─── STATE ───────────────────────────────────────────────────────────────────
+const TOTAL = 50;
+let pool = shuffle([...ALL]);
+// fill to 50 if needed by repeating
+while(pool.length < TOTAL){ pool = pool.concat(shuffle([...ALL])); }
+pool = pool.slice(0, TOTAL);
+
+let cur = 0, score = 0, answered = false;
+let typeScores = {mc:{r:0,t:0},ox:{r:0,t:0},order:{r:0,t:0},blank:{r:0,t:0},match:{r:0,t:0}};
+
+function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a; }
+
+// ─── RENDER DISPATCH ─────────────────────────────────────────────────────────
+function updateProgress(){
+  const pct = Math.round(cur/TOTAL*100);
+  document.getElementById('prog-fill').style.width = pct+'%';
+  document.getElementById('prog-text').textContent = cur+' / '+TOTAL;
+  document.getElementById('score-badge').textContent = '점수 '+score;
+}
+
+function render(){
+  updateProgress();
+  if(cur >= TOTAL){ renderResult(); return; }
+  const q = pool[cur];
+  const area = document.getElementById('quiz-area');
+  const typeLabel = {mc:'사지선다',ox:'O / X',order:'순서 배열',blank:'빈칸 완성',match:'매칭'}[q.type];
+  const typeClass = 'type-'+q.type;
+  let inner = `<span class="type-tag ${typeClass}">${typeLabel}</span><span class="cat-badge">${q.cat}</span>
+    <div class="q-text">${q.q}</div>`;
+  if(q.type==='mc') inner += renderMC(q);
+  else if(q.type==='ox') inner += renderOX(q);
+  else if(q.type==='order') inner += renderOrder(q);
+  else if(q.type==='blank') inner += renderBlank(q);
+  else if(q.type==='match') inner += renderMatch(q);
+  inner += `<div class="feedback" id="feedback"></div>
+    <button class="next-btn" id="next-btn" onclick="goNext()">${cur+1<TOTAL?'다음 문제 →':'결과 보기 →'}</button>`;
+  area.innerHTML = `<div class="card">${inner}</div>`;
+}
+
+// ─── MC ───────────────────────────────────────────────────────────────────────
+function renderMC(q){
+  const letters=['A','B','C','D'];
+  const shuffled = shuffle(q.opts.map((o,i)=>({o,i})));
+  window._mcMap = shuffled;
+  return `<div class="opts">${shuffled.map((item,si)=>`
+    <button class="opt-btn" id="mc${si}" onclick="chooseMC(${si})">
+      <span class="opt-label">${letters[si]}</span>${item.o}
+    </button>`).join('')}</div>`;
+}
+function chooseMC(si){
+  if(answered) return;
+  answered=true;
+  const q=pool[cur];
+  const correctOrigIdx = q.ans;
+  typeScores.mc.t++;
+  let correct=false;
+  window._mcMap.forEach((item,idx)=>{
+    const btn=document.getElementById('mc'+idx);
+    btn.disabled=true;
+    if(item.i===correctOrigIdx){ btn.classList.add('correct'); }
+    else if(idx===si){ btn.classList.add('wrong'); }
+    if(idx===si && item.i===correctOrigIdx) correct=true;
+  });
+  if(correct){ score++; typeScores.mc.r++; showFeedback(true,q.exp); }
+  else showFeedback(false,q.exp);
+  document.getElementById('next-btn').style.display='inline-block';
+}
+
+// ─── OX ───────────────────────────────────────────────────────────────────────
+function renderOX(q){
+  return `<div class="ox-wrap">
+    <button class="ox-btn" id="ox-o" onclick="chooseOX(true)">⭕</button>
+    <button class="ox-btn" id="ox-x" onclick="chooseOX(false)">❌</button>
+  </div>`;
+}
+function chooseOX(val){
+  if(answered) return;
+  answered=true;
+  const q=pool[cur];
+  typeScores.ox.t++;
+  const correct = (val===q.ans);
+  document.getElementById('ox-o').disabled=true;
+  document.getElementById('ox-x').disabled=true;
+  if(q.ans===true){ document.getElementById('ox-o').classList.add('correct'); }
+  else { document.getElementById('ox-x').classList.add('correct'); }
+  if(val!==q.ans){
+    document.getElementById(val?'ox-o':'ox-x').classList.add('wrong');
+  }
+  if(correct){ score++; typeScores.ox.r++; showFeedback(true,q.exp); }
+  else showFeedback(false,q.exp);
+  document.getElementById('next-btn').style.display='inline-block';
+}
+
+// ─── ORDER ────────────────────────────────────────────────────────────────────
+function renderOrder(q){
+  const shuffledItems = shuffle([...q.items]);
+  window._orderState = { items: shuffledItems, slots: Array(q.correct.length).fill(null), correct: q.correct };
+  return `<p class="order-inst">항목을 클릭하여 순서대로 아래 칸을 채우세요.</p>
+    <div class="order-pool" id="order-pool">
+      ${shuffledItems.map((item,i)=>`<span class="order-chip" id="chip-${i}" onclick="pickChip(${i})">${item}</span>`).join('')}
+    </div>
+    <div class="order-slots" id="order-slots">
+      ${q.correct.map((_,i)=>`<div class="order-slot" id="slot-${i}"><span class="slot-num">${i+1}</span><span class="slot-content"></span><span class="remove-chip" onclick="removeSlot(${i})">✕</span></div>`).join('')}
+    </div>
+    <button class="order-check-btn" onclick="checkOrder()">정답 확인</button>`;
+}
+window._selectedChip = null;
+function pickChip(idx){
+  if(answered) return;
+  const state = window._orderState;
+  const chip = document.getElementById('chip-'+idx);
+  if(chip.classList.contains('used')) return;
+  // find first empty slot
+  const emptySlot = state.slots.findIndex(s=>s===null);
+  if(emptySlot===-1) return;
+  state.slots[emptySlot] = {text: state.items[idx], chipIdx: idx};
+  chip.classList.add('used');
+  const slotEl = document.getElementById('slot-'+emptySlot);
+  slotEl.classList.add('filled');
+  slotEl.querySelector('.slot-content').textContent = state.items[idx];
+}
+function removeSlot(slotIdx){
+  if(answered) return;
+  const state = window._orderState;
+  if(state.slots[slotIdx]===null) return;
+  const chipIdx = state.slots[slotIdx].chipIdx;
+  state.slots[slotIdx] = null;
+  document.getElementById('chip-'+chipIdx).classList.remove('used');
+  const slotEl = document.getElementById('slot-'+slotIdx);
+  slotEl.classList.remove('filled');
+  slotEl.querySelector('.slot-content').textContent = '';
+}
+function checkOrder(){
+  if(answered) return;
+  const state = window._orderState;
+  if(state.slots.some(s=>s===null)){ alert('모든 칸을 채워주세요!'); return; }
+  answered=true;
+  typeScores.order.t++;
+  let allCorrect=true;
+  state.slots.forEach((s,i)=>{
+    const slotEl = document.getElementById('slot-'+i);
+    if(s.text === state.correct[i]){ slotEl.classList.add('slot-correct'); }
+    else { slotEl.classList.add('slot-wrong'); allCorrect=false; }
+  });
+  // disable chips
+  document.querySelectorAll('.order-chip').forEach(c=>c.style.pointerEvents='none');
+  document.querySelector('.order-check-btn').disabled=true;
+  if(allCorrect){ score++; typeScores.order.r++; showFeedback(true,pool[cur].exp); }
+  else showFeedback(false,pool[cur].exp);
+  document.getElementById('next-btn').style.display='inline-block';
+}
+
+// ─── BLANK ────────────────────────────────────────────────────────────────────
+function renderBlank(q){
+  const shuffledOpts = shuffle([...q.opts]);
+  const displayQ = q.q.replace('[   ]','<input class="blank-input" id="blank-inp" readonly placeholder="선택하세요">');
+  return `<div class="blank-text">${displayQ}</div>
+    <div class="blank-opts">
+      ${shuffledOpts.map((o,i)=>`<button class="blank-chip" id="bchip-${i}" onclick="chooseBlank('${o.replace(/'/g,"\\'")}',${i})">${o}</button>`).join('')}
+    </div>`;
+}
+function chooseBlank(val,idx){
+  if(answered) return;
+  answered=true;
+  typeScores.blank.t++;
+  const q=pool[cur];
+  const correct = (val===q.blank);
+  document.getElementById('blank-inp').value=val;
+  document.querySelectorAll('.blank-chip').forEach(c=>c.disabled=true);
+  document.querySelectorAll('.blank-chip').forEach(c=>{
+    if(c.textContent===q.blank) c.classList.add('correct');
+    else if(c===document.getElementById('bchip-'+idx)&&!correct) c.classList.add('wrong');
+  });
+  if(correct){ score++; typeScores.blank.r++; showFeedback(true,q.exp); }
+  else showFeedback(false,q.exp);
+  document.getElementById('next-btn').style.display='inline-block';
+}
+
+// ─── MATCH ────────────────────────────────────────────────────────────────────
+function renderMatch(q){
+  const shuffledRights = shuffle([...q.rights]);
+  window._matchState = { lefts: q.lefts, rights: shuffledRights, correct: q.correct, pairs:{}, selLeft:null };
+  return `<div class="match-wrap">
+    <div>
+      <div class="match-col-label">항목</div>
+      <div class="match-left" id="match-left">
+        ${q.lefts.map((l,i)=>`<div class="match-item" id="ml-${i}" onclick="selectLeft(${i})">${l}</div>`).join('')}
+      </div>
+    </div>
+    <div>
+      <div class="match-col-label">설명</div>
+      <div class="match-right" id="match-right">
+        ${shuffledRights.map((r,i)=>`<div class="match-item" id="mr-${i}" onclick="selectRight(${i})">${r}</div>`).join('')}
+      </div>
+    </div>
+  </div>
+  <button class="match-check-btn" onclick="checkMatch()">정답 확인</button>`;
+}
+function selectLeft(i){
+  if(answered) return;
+  const ms=window._matchState;
+  if(ms.pairs[ms.lefts[i]]) return; // already paired
+  document.querySelectorAll('.match-item').forEach(el=>{ if(!el.classList.contains('matched')) el.classList.remove('selected'); });
+  ms.selLeft=i;
+  document.getElementById('ml-'+i).classList.add('selected');
+}
+function selectRight(i){
+  if(answered) return;
+  const ms=window._matchState;
+  if(ms.selLeft===null) return;
+  const leftText=ms.lefts[ms.selLeft];
+  const rightText=ms.rights[i];
+  // check not already used
+  if(Object.values(ms.pairs).includes(rightText)) return;
+  ms.pairs[leftText]=rightText;
+  document.getElementById('ml-'+ms.selLeft).classList.remove('selected');
+  document.getElementById('ml-'+ms.selLeft).classList.add('matched');
+  document.getElementById('ml-'+ms.selLeft).textContent = leftText + ' → ' + rightText;
+  document.getElementById('mr-'+i).classList.add('matched');
+  ms.selLeft=null;
+}
+function checkMatch(){
+  if(answered) return;
+  const ms=window._matchState;
+  if(Object.keys(ms.pairs).length < ms.lefts.length){ alert('모든 항목을 연결해주세요!'); return; }
+  answered=true;
+  typeScores.match.t++;
+  let allCorrect=true;
+  ms.lefts.forEach((l,i)=>{
+    const paired=ms.pairs[l];
+    const el=document.getElementById('ml-'+i);
+    el.classList.remove('matched');
+    if(paired===ms.correct[l]){ el.classList.add('matched-correct'); }
+    else { el.classList.add('matched-wrong'); allCorrect=false; }
+  });
+  document.querySelector('.match-check-btn').disabled=true;
+  if(allCorrect){ score++; typeScores.match.r++; showFeedback(true,pool[cur].exp); }
+  else showFeedback(false,pool[cur].exp);
+  document.getElementById('next-btn').style.display='inline-block';
+}
+
+// ─── SHARED UTILS ─────────────────────────────────────────────────────────────
+function showFeedback(correct, exp){
+  const fb=document.getElementById('feedback');
+  fb.className='feedback show '+(correct?'correct':'wrong');
+  fb.innerHTML='<strong>'+(correct?'정답!':'오답.')+'</strong> '+exp;
+}
+function goNext(){ cur++; answered=false; window._matchState=null; window._orderState=null; render(); }
+
+// ─── RESULT ───────────────────────────────────────────────────────────────────
+function renderResult(){
+  const pct=Math.round(score/TOTAL*100);
+  const msg = pct>=90?'완벽해요! AI 전문가 수준입니다.':pct>=80?'훌륭해요! 개념을 잘 이해하고 있습니다.':pct>=70?'잘했어요! 조금만 더 복습하면 완벽합니다.':pct>=60?'무난하네요. 취약한 부분을 집중 복습하세요.':pct>=50?'절반은 맞혔어요. 강의 자료를 한 번 더 살펴보세요.':'강의 자료를 처음부터 꼼꼼히 다시 복습해보세요.';
+  const typeNames={mc:'사지선다',ox:'O / X 퀴즈',order:'순서 배열',blank:'빈칸 완성',match:'매칭'};
+  const rows = Object.keys(typeScores).filter(k=>typeScores[k].t>0).map(k=>`
+    <div class="rb-row"><span class="rb-type">${typeNames[k]}</span><span class="rb-score">${typeScores[k].r} / ${typeScores[k].t}</span></div>`).join('');
+  document.getElementById('quiz-area').innerHTML=`<div class="card"><div class="result-box">
+    <div class="result-score">${score}<span style="font-size:28px;color:#888780"> / ${TOTAL}</span></div>
+    <div class="result-msg">${msg}<br><span style="font-size:14px">정답률 ${pct}%</span></div>
+    <div class="result-grid">
+      <div class="result-stat"><div class="val" style="color:#3B6D11">${score}</div><div class="lbl">정답</div></div>
+      <div class="result-stat"><div class="val" style="color:#A32D2D">${TOTAL-score}</div><div class="lbl">오답</div></div>
+      <div class="result-stat"><div class="val">${pct}%</div><div class="lbl">정답률</div></div>
+    </div>
+    <div class="result-breakdown">${rows}</div>
+    <button class="restart-btn" onclick="restartQuiz()">다시 풀기</button>
+  </div></div>`;
+  document.getElementById('prog-fill').style.width='100%';
+  document.getElementById('prog-text').textContent = TOTAL+' / '+TOTAL;
+  document.getElementById('score-badge').textContent = '점수 '+score;
+}
+function restartQuiz(){
+  cur=0; score=0; answered=false;
+  typeScores={mc:{r:0,t:0},ox:{r:0,t:0},order:{r:0,t:0},blank:{r:0,t:0},match:{r:0,t:0}};
+  let p2=shuffle([...ALL]);
+  while(p2.length<TOTAL) p2=p2.concat(shuffle([...ALL]));
+  pool=p2.slice(0,TOTAL);
+  render();
+}
+
+render();
+</script>
+</body>
+</html>
